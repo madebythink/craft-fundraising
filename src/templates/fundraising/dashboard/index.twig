@@ -1,0 +1,39 @@
+{% extends "_layouts/cp" %}
+{% block content %}
+<h1>Fundraising Dashboard</h1>
+
+<div class="pane">
+  <h2>Overview</h2>
+  <p>Total Projects: {{ projectsCount }}</p>
+  <p>Total Raised Across All Projects: {{ totalRaised|currency }}</p>
+</div>
+
+<div class="pane">
+  <h2>Active Projects</h2>
+  {% if activeProjects %}
+    <table class="data">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Goal</th>
+          <th>Funded</th>
+          <th>Progress</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in activeProjects %}
+          {% set percentage = p.goal > 0 ? (p.funded/p.goal)*100 : 0 %}
+          <tr>
+            <td><a href="{{ url('fundraising/projects/edit/' ~ p.id) }}">{{ p.title }}</a></td>
+            <td>{{ p.goal|currency }}</td>
+            <td>{{ p.funded|currency }}</td>
+            <td>{{ percentage|number_format(2) }}%</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No active projects at this time.</p>
+  {% endif %}
+</div>
+{% endblock %}

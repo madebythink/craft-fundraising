@@ -1,0 +1,81 @@
+{% set project = project ?? null %}
+{% if not project %}
+  <p>No project found.</p>
+  {% exit  %}
+{% endif %}
+
+<div class="fundraising-project">
+  <h1>{{ project.title }}</h1>
+  {% if project.subtitle %}
+    <h2>{{ project.subtitle }}</h2>
+  {% endif %}
+
+  {% if project.heroImage %}
+    <div class="project-hero">
+      <img src="{{ project.heroImage }}" alt="{{ project.title }}">
+    </div>
+  {% endif %}
+
+  {% if project.description %}
+    <div class="project-description">
+      {{ project.description|raw }}
+    </div>
+  {% endif %}
+
+  {% set funded = project.funded %}
+  {% set goal = project.goal %}
+  {% set percentage = goal > 0 ? (funded / goal * 100)|number_format(2) : 0 %}
+
+  <div class="tally-bar">
+    <div class="tally-meter" style="width:100%; background:#eee; position:relative;">
+      <div class="tally-progress" style="width:{{ percentage }}%; background:green; height:20px;"></div>
+    </div>
+    <p>{{ funded|currency }} raised of {{ goal|currency }} ({{ percentage }}%)</p>
+  </div>
+
+  {% set now = date() %}
+  {% if project.endDate > now %}
+    <div class="countdown">
+      Time left: 
+      {% set diff = project.endDate.diff(now) %}
+      {{ diff.days }} days, {{ diff.h }} hours, {{ diff.i }} minutes, {{ diff.s }} seconds
+    </div>
+  {% else %}
+    <p>The fundraising period has ended.</p>
+  {% endif %}
+
+  {# Display public comments #}
+  {% set donations = craft.fundraising.donations.getDonationsForProject(project, true) %}
+  {% if donations %}
+    <div class="project-comments">
+      <h3>Donor Comments</h3>
+      <ul>
+        {% for d in donations %}
+          {% if d.comment %}
+            <li>
+              <strong>{{ d.donorName ?: 'Anonymous' }}</strong>: {{ d.comment }}
+            </li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  {# SecurePay Donation Form (Pseudo-code). Replace with actual form code #}
+  <form method="post" action="/securepay/donate">
+    {{ csrfInput() }}
+    <input type="hidden" name="projectId" value="{{ project.projectId }}">
+    <label>Donation Amount</label>
+    <input type="number" name="amount" step="0.01" min="1" required>
+
+    <label>Your Name (optional)</label>
+    <input type="text" name="donorName">
+
+    <label>Comment (optional)</label>
+    <textarea name="comment"></textarea>
+
+    <label><input type="checkbox" name="publicComment" value="1"> Show my comment publicly</label>
+
+    <button type="submit">Donate</button>
+  </form>
+</div>
