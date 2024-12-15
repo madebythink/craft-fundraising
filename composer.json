@@ -18,13 +18,11 @@
       }
     },
     "extra": {
-      "craft": {
-        "handle": "fundraising",
-        "name": "Fundraising",
-        "developer": "Think",
-        "documentationUrl": "",
-        "class": "madebythink\\fundraising\\Fundraising"
-      }
+      "handle": "fundraising",
+      "name": "Fundraising",
+      "developer": "Think",
+      "documentationUrl": "",
+      "class": "madebythink\\fundraising\\Fundraising"
     }
   }
   

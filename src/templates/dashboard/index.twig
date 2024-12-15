@@ -1,11 +1,31 @@
 {% extends "_layouts/cp" %}
+{% import "fundraising/_macros/charts.twig" as charts %}
+
+{% set title = 'Dashboard' %}
+{% set crumbs = [
+  {
+    label: 'Fundraising'|t('plugin-handle'),
+    url: url(pluginHandle),
+  },
+  {
+    label: 'Dashboard'|t('plugin-handle'),
+    url: url(pluginHandle ~ '/dashboard'),
+  },
+] %}
+
+{% set selectedSubnavItem = pluginHandle ~ '/dashboard' %}
+{% set projectPieLabels = '' %}
+
 {% block content %}
-<h1>Fundraising Dashboard</h1>
 
 <div class="pane">
   <h2>Overview</h2>
   <p>Total Projects: {{ projectsCount }}</p>
   <p>Total Raised Across All Projects: {{ totalRaised|currency }}</p>
+  <div class="dashboard-charts">
+    {{ charts.renderChart('projectsPie', 'pie', pieChartData) }}
+    {{ charts.renderChart('donationsLine', 'line', lineChartData) }}
+  </div>
 </div>
 
 <div class="pane">
@@ -37,3 +57,28 @@
   {% endif %}
 </div>
 {% endblock %}
+
+{% js "https://cdn.jsdelivr.net/npm/chart.js" %}
+
+{% css %}
+  .dashboard-charts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .dashboard-charts canvas {
+      max-width: 48%;
+      max-height: 400px;
+      aspect-ratio: 1 / 1;
+      margin-bottom: 20px;
+  }
+
+  @media (max-width: 768px) {
+      .dashboard-charts canvas {
+          max-width: 100%;
+      }
+  }
+{% endcss %}
+
+

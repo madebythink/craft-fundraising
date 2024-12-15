@@ -1,0 +1,58 @@
+{% extends "_layouts/cp" %}
+
+{% set title = 'Projects' %}
+{% set crumbs = [
+  {
+    label: 'Fundraising'|t('plugin-handle'),
+    url: url(pluginHandle),
+  },
+  {
+    label: 'Projects'|t('plugin-handle'),
+    url: url(pluginHandle ~ '/projects'),
+  },
+] %}
+
+{% set selectedSubnavItem = pluginHandle ~ '/projects' %}
+
+{% block actionButton %}
+    <div class="buttons">
+        <div class="btngroup submit">
+            <a class="btn submit add icon" href="{{ 'projects/new' }}">{{ 'New project'|t('app') }}</a>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="tableview tablepane">
+  <table class="data fullwidth">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Project ID</th>
+        <th>Goal</th>
+        <th>Funded</th>
+        <th>Start</th>
+        <th>End</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in projects %}
+      <tr>
+        <td><a href="{{ url('fundraising/projects/edit/' ~ p.id) }}">{{ p.title }}</a></td>
+        <td>{{ p.projectId }}</td>
+        <td>{{ p.goal|currency }}</td>
+        <td>{{ p.funded|currency }}</td>
+        <td>{{ p.startDate|date }}</td>
+        <td>{{ p.endDate|date }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% css %}
+    .tableview td {
+        white-space: nowrap;
+    }
+{% endcss %}
+
+{% endblock %}

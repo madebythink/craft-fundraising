@@ -28,6 +28,8 @@ class Install extends Migration
             ]);
         }
 
+        $this->addForeignKey(null, '{{%fundraising_projects}}', 'id', '{{%elements}}', 'id', 'CASCADE', null);
+
         // Donations Table
         if (!$this->db->tableExists('{{%fundraising_donations}}')) {
             $this->createTable('{{%fundraising_donations}}', [

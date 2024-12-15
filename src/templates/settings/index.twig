@@ -1,0 +1,61 @@
+{% extends '_layouts/cp' %}
+{% import "_includes/forms.twig" as forms %}
+
+{% set crumbs = [
+  {
+    label: 'Fundraising'|t('plugin-handle'),
+    url: url(pluginHandle),
+  },
+  {
+    label: 'Settings'|t('plugin-handle'),
+    url: url(pluginHandle ~ '/settings'),
+  },
+] %}
+
+{% set title = 'Settings' %}
+{% set selectedSubnavItem = pluginHandle ~ '/settings' %}
+{% set fullPageForm = true %}
+
+{% block content %}
+    {{ csrfInput() }}
+    {{ actionInput(pluginHandle ~ '/settings/save') }}
+
+    {{ forms.autosuggestField({
+        first: true,
+        label: 'Default Currency',
+        id: 'defaultCurrency',
+        name: 'defaultCurrency',
+        value: settings.defaultCurrency,
+        errors: settings.getErrors('defaultCurrency'),
+        required: true,
+        suggestEnvVars: true,
+        includeEnvVars: true,
+    }) }}
+
+    {{ forms.booleanMenuField({
+        label: "Enable Public Comments by Default"|t('app'),
+        id: 'enablePublicCommentsByDefault',
+        name: 'enablePublicCommentsByDefault',
+        includeEnvVars: true,
+        value: settings.enablePublicCommentsByDefault,
+        instructions: "Default is disabled."|t('app'),
+    }) }}
+
+
+    {{ forms.autosuggestField({
+        label: 'Default Goal Currency Symbol',
+        id: 'defaultGoalCurrencySymbol',
+        name: 'defaultGoalCurrencySymbol',
+        value: settings.defaultGoalCurrencySymbol,
+        suggestEnvVars: true,
+        includeEnvVars: true,
+    }) }}
+
+    <hr>
+    <h2>Projects</h2>
+    {{ forms.fieldLayoutDesignerField({
+        fieldLayout: craft.app.fields.getLayoutByType(
+            pluginHandle ~ '\\elements\\Project'
+        ),  
+    }) }}
+{% endblock %}

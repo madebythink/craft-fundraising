@@ -1,0 +1,214 @@
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% set fullPageForm = true %}
+{% set isNew = project.id is not defined or project.id is null %}
+{% set title = isNew ? "New Project"|t(pluginHandle) : "Edit Project"|t(pluginHandle) %}
+
+{% set crumbs = [
+  {
+    label: "Fundraising"|t(pluginHandle),
+    url: url(pluginHandle)
+  },
+  {
+    label: "Projects"|t(pluginHandle),
+    url: url(pluginHandle ~ '/projects')
+  },
+  {
+    label: title,
+    url: isNew ? url(pluginHandle ~ '/projects/edit') : url(pluginHandle ~ '/projects/edit/' ~ project.id)
+  },
+] %}
+
+{% set formActions = isNew ? [
+    {
+      label: 'Save and continue editing'|t('plugin-handle'),
+      redirect: url(pluginHandle ~ '/projects/edit/' ~ project.id)|hash,
+      retainScroll: true,
+      shortcut: true,
+    },
+    {
+      label: 'Save and add another'|t('plugin-handle'),
+      redirect: url(pluginHandle ~ '/projects/new')|hash,
+      shortcut: true,
+      shift: true,
+    },
+  ] : [
+    {
+      label: 'Save and continue editing'|t('plugin-handle'),
+      redirect: url(pluginHandle ~ '/projects/edit/' ~ project.id)|hash,
+      retainScroll: true,
+      shortcut: true,
+    },
+    {
+      label: 'Save and add another'|t('plugin-handle'),
+      redirect: url(pluginHandle ~ '/projects/new')|hash,
+      shortcut: true,
+      shift: true,
+    },
+    {
+        label: "Delete"|t(pluginHandle),
+        confirm: "Are you sure you want to delete this project?"|t(pluginHandle),
+        action: pluginHandle ~ '/projects/delete',
+        redirect: (url(pluginHandle ~ '/projects'))|hash,
+        destructive: true,
+    },
+] %}
+
+{% block content %}
+    
+    {{ csrfInput() }}
+    {{ actionInput(pluginHandle ~ '/projects/save') }}
+    {{ redirectInput(url(pluginHandle ~ '/projects')) }}
+
+    <input type="hidden" name="projectId" value="{{ project.id }}">
+
+    {{ forms.textField({
+        label: "Project ID (Unique)"|t(pluginHandle),
+        id: 'projectIdField',
+        name: 'projectIdField',
+        value: project.projectId ?? '',
+        instructions: "Unique identifier for the project."|t(pluginHandle),
+        required: true,
+        errors: project is defined ? project.getErrors('projectId') : [],
+    }) }}
+    <div class="error" id="projectIdFieldError" style="display:none;"></div>
+
+    {{ forms.textField({
+        label: "Title"|t(pluginHandle),
+        id: 'title',
+        name: 'title',
+        value: project.title ?? '',
+        required: true,
+        instructions: "Enter the project title."|t(pluginHandle),
+        errors: project is defined ? project.getErrors('title') : [],
+    }) }}
+
+    {{ forms.textField({
+        label: "Subtitle"|t(pluginHandle),
+        id: 'subtitle',
+        name: 'subtitle',
+        value: project.subtitle ?? '',
+        instructions: "Short tagline or description."|t(pluginHandle),
+    }) }}
+
+    {{ forms.textareaField({
+        label: "Description"|t(pluginHandle),
+        id: 'description',
+        name: 'description',
+        value: project.description ?? '',
+        instructions: "Enter a rich description of the project."|t(pluginHandle),
+    }) }}
+
+    <hr>
+
+    {{ forms.textField({
+        label: "Goal"|t(pluginHandle),
+        id: 'goal',
+        name: 'goal',
+        type: 'number',
+        step: '0.01',
+        value: project.goal is defined ? project.goal : '',
+        instructions: "Monetary target for the project."|t(pluginHandle),
+        errors: project is defined ? project.getErrors('goal') : [],
+    }) }}
+
+    <div style="display: flex; justify-content: start; align-items: baseline;">
+      <div style="margin-right: 48px;">
+        {{ forms.dateField({
+            label: "Start Date"|t(pluginHandle),
+            id: 'startDate',
+            name: 'startDate',
+            value: project.startDate ?? null,
+            instructions: "Select the fundraising start date."|t(pluginHandle),
+            required: true,
+            errors: project is defined ? project.getErrors('startDate') : [],
+        }) }}
+      </div>
+      <div>
+        {{ forms.dateField({
+            label: "End Date"|t(pluginHandle),
+            id: 'endDate',
+            name: 'endDate',
+            value: project.endDate ?? null,
+            instructions: "Select the fundraising end date."|t(pluginHandle),
+            required: true,
+            errors: project is defined ? project.getErrors('endDate') : [],
+        }) }}
+      </div>
+    </div>
+
+    <hr>
+
+    {{ forms.elementSelectField({
+        label: "Hero Image"|t(pluginHandle),
+        id: 'heroImage',
+        name: 'heroImage',
+        elements: project.getHeroImageAsset() ? [project.getHeroImageAsset()] : [],
+        instructions: "The hero image used to showcase the project on the website."|t(pluginHandle),
+        required: true,
+        elementType: 'craft\\elements\\Asset',
+        viewMode: 'cards',
+        limit: 1,
+        allowAdd: true,
+        sources: true,
+        showActionMenu: true,
+    }) }}
+
+    {{ forms.elementSelectField({
+        label: "Media Gallery"|t(pluginHandle),
+        id: 'mediaGallery',
+        name: 'mediaGallery',
+        elements: project.getMediaGalleryAssets(),
+        instructions: "Associated images or videos (in order added)."|t(pluginHandle),
+        elementType: 'craft\\elements\\Asset',
+        viewMode: 'cards',
+        maintainHierarchy: true,
+        allowAdd: true,
+        allowReorder: true,
+    }) }}
+{% endblock %}
+
+{% js %}
+  function isNumeric(value) {
+      return /^-?\d+$/.test(value);
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+      const projectIdInput = document.getElementById('projectIdField');
+      const errorDiv = document.getElementById('projectIdFieldError');
+
+      projectIdInput.addEventListener('blur', function() {
+          const projectIdVal = projectIdInput.value.trim();
+          if (!projectIdVal) {
+              // If empty, no need to check uniqueness
+              errorDiv.style.display = 'none';
+              errorDiv.textContent = '';
+              return;
+          }
+
+          let urlPart = window.location.pathname.split("/").pop();
+          let editId = (isNumeric(urlPart)) ? '&editId='+urlPart : '';
+
+          fetch('{{ url(pluginHandle ~ "/projects/check-project-id") }}?projectId=' + encodeURIComponent(projectIdVal) + editId, {
+              headers: {
+                  'Accept': 'application/json',
+                  'X-Requested-With': 'XMLHttpRequest'
+              }
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (!data.unique) {
+                  errorDiv.style.display = 'block';
+                  errorDiv.textContent = data.message || 'Project ID is already in use.';
+              } else {
+                  errorDiv.style.display = 'none';
+                  errorDiv.textContent = '';
+              }
+          })
+          .catch(err => {
+              console.error('Error checking Project ID uniqueness:', err);
+          });
+      });
+  });
+{% endjs %}

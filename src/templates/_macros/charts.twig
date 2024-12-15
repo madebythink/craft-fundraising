@@ -1,0 +1,32 @@
+{% macro renderChart(id, type, chartData) %}
+  <canvas id="{{ id }}"></canvas>
+  <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+      const ctx{{ id }} = document.getElementById('{{ id }}');
+      new Chart(ctx{{ id }}, {
+        type: '{{ type }}',
+        data: {
+          labels: {{ chartData.labels|json_encode|raw }},
+          datasets: [{
+            label: '{{ chartData.label|default('') }}',
+            data: {{ chartData.data|json_encode|raw }},
+            backgroundColor: {{ (chartData.backgroundColors is defined) ? chartData.backgroundColors|json_encode|raw : 'undefined' }},
+            borderColor: {{ (chartData.borderColors is defined) ? chartData.borderColors|json_encode|raw : 'undefined' }},
+            fill: {{ (chartData.fill is defined) ? chartData.fill|json_encode|raw : 'undefined' }},
+            borderWidth: 1,
+            {% if type == 'line' %}tension: 0.4{% endif %}
+          }]
+        },
+        {% if type == 'line' %}
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+        {% endif %}
+      });
+    });
+  </script>
+{% endmacro %}

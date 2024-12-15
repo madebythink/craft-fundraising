@@ -11,9 +11,9 @@ class ProjectsService extends Component
         return Project::find()->all();
     }
 
-    public function getProjectByProjectId(string $projectId)
+    public function getProjectByProjectId(string $id)
     {
-        return Project::find()->id($projectId)->one();
+        return Project::find()->id($id)->one();
     }
 
     public function updateFunding(Project $project, float $amount)
