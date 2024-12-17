@@ -1,4 +1,5 @@
 {% extends "_layouts/cp" %}
+{% import "@craftcms/ckeditor/templates/_includes/forms" as ckeditorForms %}
 {% import "_includes/forms" as forms %}
 
 {% set fullPageForm = true %}
@@ -92,12 +93,13 @@
         instructions: "Short tagline or description."|t(pluginHandle),
     }) }}
 
-    {{ forms.textareaField({
+    {{ ckeditorForms.ckeditorField({
         label: "Description"|t(pluginHandle),
         id: 'description',
         name: 'description',
         value: project.description ?? '',
         instructions: "Enter a rich description of the project."|t(pluginHandle),
+        errors: project is defined ? project.getErrors('description') : [],
     }) }}
 
     <hr>

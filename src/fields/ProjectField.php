@@ -17,10 +17,7 @@ class ProjectField extends Field
         $projects = Project::find()->all();
         $options = [];
         foreach ($projects as $project) {
-            $options[] = [
-                'label' => $project->title,
-                'value' => $project->id
-            ];
+            $options[$project->id] = $project->title;
         }
 
         return Html::dropDownList($this->handle, $value, $options, ['class' => 'form-control']);

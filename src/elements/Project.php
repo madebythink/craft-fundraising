@@ -19,8 +19,53 @@ class Project extends Element
     public ?\DateTime $startDate = null;
     public ?\DateTime $endDate = null;
     public ?string $description = null;
-    public ?array $heroImage = null; // JSON with single asset ID
-    public ?array $mediaGallery = null; // JSON of asset IDs
+    protected ?array $_heroImage = null; // JSON with single asset ID
+    protected ?array $_mediaGallery = null; // JSON of asset IDs
+
+    // Magic getter to resolve dynamically
+    public function __get($name)
+    {
+        switch ($name) {
+            case 'heroImage':
+                return $this->getHeroImage();
+            case 'mediaGallery':
+                return $this->getMediaGallery();
+        }
+
+        return parent::__get($name);
+    }
+
+    // Magic setter to allow dynamic property setting
+    public function __set($name, $value)
+    {
+        switch ($name) {
+            case 'heroImage':
+                // Decode JSON if a string is provided
+                if (is_string($value)) {
+                    $decoded = json_decode($value, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $value = $decoded;
+                    }
+                }
+                $this->_heroImage = is_array($value) ? $value : null;
+                break;
+
+            case 'mediaGallery':
+                // Decode JSON if a string is provided
+                if (is_string($value)) {
+                    $decoded = json_decode($value, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $value = $decoded;
+                    }
+                }
+                $this->_mediaGallery = is_array($value) ? $value : null;
+                break;
+
+            default:
+                parent::__set($name, $value);
+        }
+    }
+
 
     public static function hasTitles(): bool
     {
@@ -121,8 +166,8 @@ class Project extends Element
                 return $this->endDate ? Craft::$app->getFormatter()->asDatetime($this->endDate, 'short') : '';
 
             case 'heroImage':
-                if (is_array($this->heroImage) && !empty($this->heroImage[0])) {
-                    $assetId = $this->heroImage[0];
+                if (is_array($this->_heroImage) && !empty($this->_heroImage[0])) {
+                    $assetId = $this->_heroImage[0];
                     $asset = \craft\elements\Asset::find()->id($assetId)->one();
                     if ($asset) {
                         $thumbUrl = $asset->getUrl(['width' => 50, 'height' => 50]);
@@ -132,8 +177,8 @@ class Project extends Element
                 return '';
 
             case 'mediaGallery':
-                if (is_array($this->mediaGallery) && !empty($this->mediaGallery)) {
-                    $assets = \craft\elements\Asset::find()->id($this->mediaGallery)->all();
+                if (is_array($this->_mediaGallery) && !empty($this->_mediaGallery)) {
+                    $assets = \craft\elements\Asset::find()->id($this->_mediaGallery)->all();
                     $html = '';
                     foreach ($assets as $asset) {
                         $thumbUrl = $asset->getUrl(['width' => 30, 'height' => 30]);
@@ -150,8 +195,8 @@ class Project extends Element
 
     public function getHeroImageAsset(): ?\craft\elements\Asset
     {
-        if (is_array($this->heroImage) && !empty($this->heroImage[0])) {
-            return \craft\elements\Asset::find()->id($this->heroImage[0])->one();
+        if (is_array($this->_heroImage) && !empty($this->_heroImage[0])) {
+            return \craft\elements\Asset::find()->id($this->_heroImage[0])->one();
         }
 
         return null;
@@ -159,11 +204,34 @@ class Project extends Element
 
     public function getMediaGalleryAssets(): array
     {
-        if (is_array($this->mediaGallery) && !empty($this->mediaGallery)) {
-            return \craft\elements\Asset::find()->id($this->mediaGallery)->all();
+        if (is_array($this->_mediaGallery) && !empty($this->_mediaGallery)) {
+            return \craft\elements\Asset::find()->id($this->_mediaGallery)->all();
         }
 
         return [];
+    }
+
+    /**
+     * Returns an ElementQuery for the hero image.
+     * 
+     * This allows you to do `project.heroImage.one()` in Twig to get the single asset.
+     */
+    public function getHeroImage(): \craft\elements\db\AssetQuery
+    {
+        // If heroImage is empty or not an array, return an empty query
+        $ids = (is_array($this->_heroImage) && !empty($this->_heroImage)) ? $this->_heroImage : [0]; 
+        return \craft\elements\Asset::find()->id($ids);
+    }
+
+    /**
+     * Returns an ElementQuery for the mediaGallery.
+     * 
+     * This allows `project.mediaGallery.all()` in Twig to get all related assets.
+     */
+    public function getMediaGallery(): \craft\elements\db\AssetQuery
+    {
+        $ids = (is_array($this->_mediaGallery) && !empty($this->_mediaGallery)) ? $this->_mediaGallery : [0];
+        return \craft\elements\Asset::find()->id($ids);
     }
 
     public function getIsNew(): bool
@@ -225,12 +293,12 @@ class Project extends Element
         $record->startDate = Db::prepareDateForDb($this->startDate);
         $record->endDate = Db::prepareDateForDb($this->endDate);
         $record->description = $this->description;
-        $record->heroImage = $this->heroImage;
-        $record->mediaGallery = $this->mediaGallery;
+        $record->heroImage = $this->_heroImage;
+        $record->mediaGallery = $this->_mediaGallery;
 
         // Encode the array of Asset IDs if not already encoded.
-        $record->heroImage = is_array($this->heroImage) ? json_encode($this->heroImage) : $this->heroImage;
-        $record->mediaGallery = is_array($this->mediaGallery) ? json_encode($this->mediaGallery) : $this->mediaGallery;
+        $record->heroImage = is_array($this->_heroImage) ? json_encode($this->_heroImage) : $this->_heroImage;
+        $record->mediaGallery = is_array($this->_mediaGallery) ? json_encode($this->_mediaGallery) : $this->_mediaGallery;
 
         $record->save(false);
     }
@@ -261,18 +329,18 @@ class Project extends Element
         parent::afterPopulate();
 
         // heroImage might be stored as a JSON string if not null
-        if ($this->heroImage && is_string($this->heroImage)) {
-            $decoded = json_decode($this->heroImage, true);
+        if ($this->_heroImage && is_string($this->_heroImage)) {
+            $decoded = json_decode($this->_heroImage, true);
             if (json_last_error() === JSON_ERROR_NONE) {
-                $this->heroImage = $decoded;
+                $this->_heroImage = $decoded;
             }
         }
 
         // mediaGallery might also be stored as JSON
-        if ($this->mediaGallery && is_string($this->mediaGallery)) {
-            $decoded = json_decode($this->mediaGallery, true);
+        if ($this->_mediaGallery && is_string($this->_mediaGallery)) {
+            $decoded = json_decode($this->_mediaGallery, true);
             if (json_last_error() === JSON_ERROR_NONE) {
-                $this->mediaGallery = $decoded;
+                $this->_mediaGallery = $decoded;
             }
         }
     }
